@@ -87,6 +87,12 @@ const B2C_NODES: FlowNode[] = [
     kind: "bling",
   },
   {
+    id: "oxi",
+    title: "OxiTilia recebe o pedido",
+    detail: "A logística entra no momento em que o pedido nasce no espelho.",
+    kind: "bling",
+  },
+  {
     id: "acompanha",
     title: "Cliente acompanha",
     detail: "A loja mostra a situação que está no espelho.",
@@ -103,6 +109,7 @@ const B2C_EDGES = [
   { from: "cadastro", to: "fecha" },
   { from: "fecha", to: "espelho" },
   { from: "espelho", to: "bling" },
+  { from: "espelho", to: "oxi" },
   { from: "bling", to: "acompanha" },
 ];
 
@@ -158,7 +165,13 @@ const B2B_NODES: FlowNode[] = [
   {
     id: "bling",
     title: "Bling recebe e devolve",
-    detail: "Mesmo caminho do B2C: pedido, status e estoque.",
+    detail: "Entra o pedido. Voltam status, nota e estoque.",
+    kind: "bling",
+  },
+  {
+    id: "oxi",
+    title: "OxiTilia recebe o pedido",
+    detail: "A mesma logística da compra B2C, no nascimento do pedido.",
     kind: "bling",
   },
 ];
@@ -172,6 +185,7 @@ const B2B_EDGES = [
   { from: "catalogo", to: "fecha" },
   { from: "fecha", to: "espelho" },
   { from: "espelho", to: "bling" },
+  { from: "espelho", to: "oxi" },
 ];
 
 const PRODUTO_NODES: FlowNode[] = [
@@ -195,7 +209,7 @@ const PRODUTO_NODES: FlowNode[] = [
   },
   {
     id: "tela",
-    title: "Loja e dashboard leem o espelho",
+    title: "Loja, portais e dashboard leem o espelho",
     detail: "A tela mostra essa cópia, sem abrir o Bling.",
     kind: "nosso",
   },
@@ -227,6 +241,12 @@ const PEDIDO_NODES: FlowNode[] = [
     kind: "bling",
   },
   {
+    id: "oxi",
+    title: "O espelho envia o pedido à OxiTilia",
+    detail: "A logística recebe a entrega junto com o nascimento do pedido.",
+    kind: "bling",
+  },
+  {
     id: "volta",
     title: "Status e estoque voltam",
     detail: "O espelho alinha a situação com o Bling.",
@@ -243,6 +263,7 @@ const PEDIDO_NODES: FlowNode[] = [
 const PEDIDO_EDGES = [
   { from: "loja", to: "espelho" },
   { from: "espelho", to: "bling" },
+  { from: "espelho", to: "oxi" },
   { from: "bling", to: "volta" },
   { from: "volta", to: "tela" },
 ];
@@ -334,6 +355,79 @@ const BACK_EDGES = [
   { from: "espelho", to: "fica" },
 ];
 
+const AFILIADO_NODES: FlowNode[] = [
+  {
+    id: "entra",
+    title: "Entra no portal do afiliado",
+    detail: "Acesso próprio. Não usa a loja nem o SSO do time.",
+    kind: "pessoa",
+  },
+  {
+    id: "dash",
+    title: "Vê os dashboards dele",
+    detail: "Só os números da própria atuação.",
+    kind: "nosso",
+  },
+  {
+    id: "engaja",
+    title: "Vê o engajamento",
+    detail: "O que esse afiliado gerou na plataforma.",
+    kind: "nosso",
+  },
+  {
+    id: "espelho",
+    title: "Os dados saem do espelho",
+    detail: "O time segue controlando afiliados pelo backoffice.",
+    kind: "nosso",
+  },
+];
+
+const AFILIADO_EDGES = [
+  { from: "entra", to: "dash" },
+  { from: "dash", to: "engaja" },
+  { from: "engaja", to: "espelho" },
+];
+
+const FORNECEDOR_NODES: FlowNode[] = [
+  {
+    id: "entra",
+    title: "Entra no portal do fornecedor",
+    detail: "Acesso próprio. Não usa a loja nem o SSO do time.",
+    kind: "pessoa",
+  },
+  {
+    id: "cadastra",
+    title: "Cadastra produtos",
+    detail: "Inclui o item dele dentro da plataforma.",
+    kind: "nosso",
+  },
+  {
+    id: "espelho",
+    title: "O espelho grava o produto",
+    detail: "A cópia fica no nosso registro.",
+    kind: "nosso",
+  },
+  {
+    id: "bling",
+    title: "O produto segue ao Bling",
+    detail: "O cadastro oficial continua por lá.",
+    kind: "bling",
+  },
+  {
+    id: "vendas",
+    title: "Vê as vendas dele",
+    detail: "Lidas do espelho, só as vendas dos produtos desse fornecedor.",
+    kind: "nosso",
+  },
+];
+
+const FORNECEDOR_EDGES = [
+  { from: "entra", to: "cadastra" },
+  { from: "entra", to: "vendas" },
+  { from: "cadastra", to: "espelho" },
+  { from: "espelho", to: "bling" },
+];
+
 function kindPaint(kind: Kind, theme: CanvasHostTheme) {
   if (kind === "bling") {
     return {
@@ -367,9 +461,28 @@ function kindPaint(kind: Kind, theme: CanvasHostTheme) {
   };
 }
 
+function wrapLine(value: string, maxChars: number): string[] {
+  const words = value.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxChars && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 function BoxNode({ box }: { box: Box }) {
   const theme = useHostTheme();
   const paint = kindPaint(box.kind, theme);
+  const titleLines = wrapLine(box.title, Math.max(12, Math.floor((box.w - 24) / 7.4)));
+  const detailLines = wrapLine(box.detail, Math.max(16, Math.floor((box.w - 24) / 6.2)));
   return (
     <g>
       <rect
@@ -383,16 +496,20 @@ function BoxNode({ box }: { box: Box }) {
         strokeWidth={paint.width}
         strokeDasharray={paint.dash}
       />
-      <foreignObject x={box.x + 12} y={box.y + 10} width={box.w - 24} height={box.h - 18}>
-        <div xmlns="http://www.w3.org/1999/xhtml" style={{ fontFamily: "inherit" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3, color: theme.text.primary }}>
-            {box.title}
-          </div>
-          <div style={{ fontSize: 11, lineHeight: 1.35, marginTop: 4, color: theme.text.secondary }}>
-            {box.detail}
-          </div>
-        </div>
-      </foreignObject>
+      <text x={box.x + 12} y={box.y + 22} fill={theme.text.primary} fontSize={13} fontWeight={600}>
+        {titleLines.map((line, index) => (
+          <tspan key={line} x={box.x + 12} dy={index === 0 ? 0 : 16}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+      <text x={box.x + 12} y={box.y + 26 + titleLines.length * 16} fill={theme.text.secondary} fontSize={11}>
+        {detailLines.map((line, index) => (
+          <tspan key={line} x={box.x + 12} dy={index === 0 ? 0 : 14}>
+            {line}
+          </tspan>
+        ))}
+      </text>
     </g>
   );
 }
@@ -466,17 +583,27 @@ function MapaGeral() {
       h: 84,
       kind: "nosso",
       title: "Espelho",
-      detail: "Cópia nossa de produto, estoque, pedido e cliente. Também guarda preço B2B, visão, cargos e afiliados.",
+      detail: "Cópia nossa de produto, estoque, pedido e cliente. O pedido nasce aqui e segue ao Bling e à OxiTilia.",
     },
     {
       id: "bling",
       x: 80,
       y: 456,
-      w: 560,
-      h: 78,
+      w: 268,
+      h: 88,
       kind: "bling",
       title: "Bling",
-      detail: "Nesta fase entra como complemento: produto, estoque oficial, pedido de venda e fiscal.",
+      detail: "Produto, estoque oficial, pedido de venda e fiscal.",
+    },
+    {
+      id: "oxi",
+      x: 372,
+      y: 456,
+      w: 268,
+      h: 88,
+      kind: "bling",
+      title: "OxiTilia",
+      detail: "Logística. Recebe o pedido assim que ele nasce no espelho.",
     },
   ];
   const byId = Object.fromEntries(boxes.map((box) => [box.id, box]));
@@ -496,8 +623,8 @@ function MapaGeral() {
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <svg width={720} height={550} viewBox="0 0 720 550" role="img">
-        <title>Mapa da loja, do backoffice, do espelho e do Bling</title>
+      <svg width={720} height={560} viewBox="0 0 720 560" role="img">
+        <title>Mapa da loja, do backoffice, do espelho, do Bling e da OxiTilia</title>
         <defs>
           {arrowMarker("mapa-seta", color)}
           <marker id="mapa-seta-inicio" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto">
@@ -508,18 +635,116 @@ function MapaGeral() {
           <path key={d} d={d} fill="none" stroke={color} strokeWidth={1.25} markerEnd="url(#mapa-seta)" />
         ))}
         <line
-          x1={360}
+          x1={214}
           y1={byId.espelho.y + byId.espelho.h + 4}
-          x2={360}
+          x2={214}
           y2={byId.bling.y - 4}
           stroke={color}
           strokeWidth={1.25}
           markerStart="url(#mapa-seta-inicio)"
           markerEnd="url(#mapa-seta)"
         />
-        <text x={372} y={(byId.espelho.y + byId.espelho.h + byId.bling.y) / 2 + 4} fill={theme.text.tertiary} fontSize={11}>
+        <text x={224} y={(byId.espelho.y + byId.espelho.h + byId.bling.y) / 2 + 4} fill={theme.text.tertiary} fontSize={11}>
           ida e volta
         </text>
+        <line
+          x1={506}
+          y1={byId.espelho.y + byId.espelho.h + 4}
+          x2={506}
+          y2={byId.oxi.y - 4}
+          stroke={color}
+          strokeWidth={1.25}
+          markerEnd="url(#mapa-seta)"
+        />
+        <text x={516} y={(byId.espelho.y + byId.espelho.h + byId.oxi.y) / 2 + 4} fill={theme.text.tertiary} fontSize={11}>
+          envia o pedido
+        </text>
+        {boxes.map((box) => (
+          <g key={box.id}>
+            <BoxNode box={box} />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function MapaPortais() {
+  const theme = useHostTheme();
+  const boxes: Box[] = [
+    {
+      id: "afiliado",
+      x: 16,
+      y: 8,
+      w: 330,
+      h: 96,
+      kind: "pessoa",
+      title: "Afiliado",
+      detail: "Entra no portal próprio. Não usa a loja nem o SSO.",
+    },
+    {
+      id: "fornecedor",
+      x: 374,
+      y: 8,
+      w: 330,
+      h: 96,
+      kind: "pessoa",
+      title: "Fornecedor",
+      detail: "Entra no portal próprio. Não usa a loja nem o SSO.",
+    },
+    {
+      id: "portalA",
+      x: 16,
+      y: 148,
+      w: 330,
+      h: 88,
+      kind: "nosso",
+      title: "Portal do afiliado",
+      detail: "Dashboards dele e o engajamento na plataforma.",
+    },
+    {
+      id: "portalF",
+      x: 374,
+      y: 148,
+      w: 330,
+      h: 88,
+      kind: "nosso",
+      title: "Portal do fornecedor",
+      detail: "Cadastra produtos e acompanha as vendas dele.",
+    },
+    {
+      id: "espelho",
+      x: 80,
+      y: 280,
+      w: 560,
+      h: 80,
+      kind: "nosso",
+      title: "O mesmo espelho",
+      detail: "Engajamento e vendas saem daqui. O produto do fornecedor segue ao Bling.",
+    },
+  ];
+  const byId = Object.fromEntries(boxes.map((box) => [box.id, box]));
+  const drop = (fromId: string, toId: string, x: number) => {
+    const from = byId[fromId];
+    const to = byId[toId];
+    return `M ${x} ${from.y + from.h + 2} L ${x} ${to.y - 2}`;
+  };
+  const color = theme.text.tertiary;
+  const arrows = [
+    drop("afiliado", "portalA", 181),
+    drop("fornecedor", "portalF", 539),
+    drop("portalA", "espelho", 181),
+    drop("portalF", "espelho", 539),
+  ];
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <svg width={720} height={376} viewBox="0 0 720 376" role="img">
+        <title>Portais do afiliado e do fornecedor</title>
+        <defs>{arrowMarker("mapa-portais", color)}</defs>
+        {arrows.map((d) => (
+          <path key={d} d={d} fill="none" stroke={color} strokeWidth={1.25} markerEnd="url(#mapa-portais)" />
+        ))}
         {boxes.map((box) => (
           <g key={box.id}>
             <BoxNode box={box} />
@@ -550,7 +775,7 @@ function FlowChart({
   markerId: string;
 }) {
   const theme = useHostTheme();
-  const nodeHeight = 72;
+  const nodeHeight = 104;
   const layout = computeDAGLayout({
     nodes: nodes.map((node) => ({ id: node.id })),
     edges,
@@ -581,7 +806,10 @@ function FlowChart({
         ))}
         {layout.nodes.map((node) => {
           const meta = byId[node.id];
+          if (!meta) return null;
           const paint = kindPaint(meta.kind, theme);
+          const titleLines = wrapLine(meta.title, Math.max(12, Math.floor((nodeWidth - 24) / 7.4)));
+          const detailLines = wrapLine(meta.detail, Math.max(16, Math.floor((nodeWidth - 24) / 6.2)));
           return (
             <g key={node.id}>
               <rect
@@ -595,16 +823,20 @@ function FlowChart({
                 strokeWidth={paint.width}
                 strokeDasharray={paint.dash}
               />
-              <foreignObject x={node.x + 12} y={node.y + 10} width={nodeWidth - 24} height={nodeHeight - 16}>
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{ fontFamily: "inherit" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, color: theme.text.primary }}>
-                    {meta.title}
-                  </div>
-                  <div style={{ fontSize: 11, lineHeight: 1.35, marginTop: 4, color: theme.text.secondary }}>
-                    {meta.detail}
-                  </div>
-                </div>
-              </foreignObject>
+              <text x={node.x + 12} y={node.y + 22} fill={theme.text.primary} fontSize={13} fontWeight={600}>
+                {titleLines.map((line, index) => (
+                  <tspan key={line} x={node.x + 12} dy={index === 0 ? 0 : 16}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+              <text x={node.x + 12} y={node.y + 26 + titleLines.length * 16} fill={theme.text.secondary} fontSize={11}>
+                {detailLines.map((line, index) => (
+                  <tspan key={line} x={node.x + 12} dy={index === 0 ? 0 : 14}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
             </g>
           );
         })}
@@ -617,9 +849,9 @@ function Legenda() {
   const theme = useHostTheme();
   const itens = [
     { label: "Pessoa", kind: "pessoa" as const },
-    { label: "Loja, backoffice e espelho", kind: "nosso" as const },
+    { label: "Loja, portais e espelho", kind: "nosso" as const },
     { label: "Decisão", kind: "decisao" as const },
-    { label: "Bling", kind: "bling" as const },
+    { label: "Bling e OxiTilia", kind: "bling" as const },
   ];
   return (
     <Row gap={16} align="center" wrap>
@@ -659,12 +891,13 @@ function QuadroRegistros() {
           rows={[
             ["Produto, SKU e EAN", "Cópia para a loja e o dashboard", "Cadastro oficial"],
             ["Estoque", "Saldo que a tela mostra", "Saldo oficial"],
-            ["Pedido de venda", "Nasce na compra e guarda o histórico", "Recebe o pedido e devolve o status"],
+            ["Pedido de venda", "Nasce na compra e guarda o histórico", "Bling recebe a venda. OxiTilia recebe a logística."],
             ["Nota e parte fiscal", "Guarda o status que voltou", "Emissão e rotina fiscal"],
             ["Cliente B2C", "Conta criada na hora de pagar", "Recebe o cliente junto com o pedido"],
             ["Cliente B2B, preço e visão", "Quem vê uniforme e qual preço", "Recebe o pedido já com esse preço"],
             ["Acesso por SSO e cargos", "Conta corporativa e o que cada pessoa abre", "Fica no nosso acesso"],
-            ["Afiliados", "Controle de quem indica e do que gerou", "Fica no espelho"],
+            ["Afiliados", "O time controla no backoffice. O afiliado entra noutro portal.", "Fica no espelho"],
+            ["Fornecedor", "Cadastra produto no portal próprio e vê as vendas dele", "O produto segue ao Bling"],
             ["Frete e pagamento", "Regra e resultado da compra", "O pedido chega com esses dados"],
           ]}
         />
@@ -679,7 +912,7 @@ export default function GavioesStyleFluxos() {
       <Stack gap={8}>
         <H1>Fluxos da Gaviões Style</H1>
         <Text tone="secondary">
-          Loja, backoffice e Bling. O espelho é a cópia nossa dos dados, para dashboard e operação do dia a dia. O Bling segue nas funções que já cumpre nesta fase: produto, estoque oficial, pedido de venda e fiscal.
+          Loja para quem compra, backoffice por SSO para o time, e portais próprios para afiliado e fornecedor. O espelho é a cópia nossa dos dados. O Bling segue em produto, estoque oficial, pedido de venda e fiscal. A OxiTilia recebe o pedido para a logística.
         </Text>
       </Stack>
       <Legenda />
@@ -688,9 +921,14 @@ export default function GavioesStyleFluxos() {
       <Stack gap={12}>
         <H2>1. Visão geral</H2>
         <Text tone="secondary">
-          Quem compra entra pela loja. O time entra no backoffice por SSO. Os dois usam o espelho. O espelho conversa com o Bling nos dois sentidos.
+          Quem compra entra pela loja. O time entra no backoffice por SSO. Afiliado e fornecedor entram em portais separados. Todos usam o espelho. O pedido segue ao Bling e à OxiTilia.
         </Text>
         <MapaGeral />
+        <H3>Acessos separados</H3>
+        <Text tone="secondary" size="small">
+          Afiliado e fornecedor não passam pelo e-commerce nem pelo SSO.
+        </Text>
+        <MapaPortais />
         <QuadroRegistros />
       </Stack>
 
@@ -698,18 +936,18 @@ export default function GavioesStyleFluxos() {
       <Stack gap={12}>
         <H2>2. Compra B2C</H2>
         <Text tone="secondary">
-          Qualquer pessoa vê o catálogo público e monta o carrinho sem conta. O cadastro aparece só na hora de pagar. O pedido fica no espelho e o Bling recebe a venda.
+          Qualquer pessoa vê o catálogo público e monta o carrinho sem conta. O cadastro aparece só na hora de pagar. O pedido nasce no espelho e já segue para o Bling e para a OxiTilia, a logística.
         </Text>
-        <FlowChart nodes={B2C_NODES} edges={B2C_EDGES} nodeWidth={420} markerId="seta-b2c" />
+        <FlowChart nodes={B2C_NODES} edges={B2C_EDGES} nodeWidth={300} markerId="seta-b2c" />
       </Stack>
 
       <Divider />
       <Stack gap={12}>
         <H2>3. Acesso B2B</H2>
         <Text tone="secondary">
-          Uniforme, item de empresa e preço fechado dependem de cadastro aprovado. O backoffice monta o que cada empresa vê e por qual preço. O catálogo público continua aberto. A compra segue o mesmo espelho e o mesmo Bling do B2C.
+          Uniforme, item de empresa e preço fechado dependem de cadastro aprovado. O backoffice monta o que cada empresa vê e por qual preço. O catálogo público continua aberto. Quando a compra fecha, o pedido também nasce no espelho e segue para o Bling e para a OxiTilia.
         </Text>
-        <FlowChart nodes={B2B_NODES} edges={B2B_EDGES} nodeWidth={420} markerId="seta-b2b" />
+        <FlowChart nodes={B2B_NODES} edges={B2B_EDGES} nodeWidth={300} markerId="seta-b2b" />
         <Callout tone="neutral" title="Etapa seguinte">
           O pagamento direto do franqueado ao fornecedor, combinado na reunião de setembro, fica fora deste checkout.
         </Callout>
@@ -731,16 +969,16 @@ export default function GavioesStyleFluxos() {
         <Stack gap={8}>
           <H3>Pedido da loja</H3>
           <Text tone="secondary" size="small">
-            A venda nasce na loja, fica no espelho, segue ao Bling e volta com status, nota e estoque.
+            A venda nasce na loja e fica no espelho. O Bling recebe a venda. A OxiTilia recebe a entrega. O status volta ao espelho.
           </Text>
-          <FlowChart nodes={PEDIDO_NODES} edges={PEDIDO_EDGES} nodeWidth={420} markerId="seta-pedido" />
+          <FlowChart nodes={PEDIDO_NODES} edges={PEDIDO_EDGES} nodeWidth={300} markerId="seta-pedido" />
         </Stack>
         <Stack gap={8}>
           <H3>Ajuste no backoffice</H3>
           <Text tone="secondary" size="small">
             Pedido, estoque oficial e cliente da compra seguem ao Bling. Cargo, afiliados, preço de empresa e visão do cliente ficam no espelho.
           </Text>
-          <FlowChart nodes={AJUSTE_NODES} edges={AJUSTE_EDGES} nodeWidth={420} markerId="seta-ajuste" />
+          <FlowChart nodes={AJUSTE_NODES} edges={AJUSTE_EDGES} nodeWidth={300} markerId="seta-ajuste" />
         </Stack>
       </Stack>
 
@@ -748,9 +986,9 @@ export default function GavioesStyleFluxos() {
       <Stack gap={12}>
         <H2>5. Backoffice</H2>
         <Text tone="secondary">
-          O time entra por SSO, com a conta corporativa. O cargo abre os dashboards, o controle de afiliados, a lista de clientes e os demais módulos.
+          O time entra por SSO, com a conta corporativa. O cargo abre os dashboards, o controle de afiliados, a lista de clientes e os demais módulos. O afiliado e o fornecedor não entram por aqui.
         </Text>
-        <FlowChart nodes={BACK_NODES} edges={BACK_EDGES} nodeWidth={420} markerId="seta-back" />
+        <FlowChart nodes={BACK_NODES} edges={BACK_EDGES} nodeWidth={300} markerId="seta-back" />
         <Card>
           <CardHeader>Módulos do backoffice</CardHeader>
           <CardBody style={{ padding: 0 }}>
@@ -758,7 +996,7 @@ export default function GavioesStyleFluxos() {
               headers={["Módulo", "O que a pessoa faz"]}
               rows={[
                 ["Dashboards", "Painéis de estoque, vendas e operação, lidos do espelho"],
-                ["Controle de afiliados", "Acompanha quem indica e o resultado de cada um"],
+                ["Controle de afiliados", "O time acompanha quem indica. O afiliado vê os números dele noutro portal."],
                 ["Lista de clientes", "Vê, cadastra e aprova clientes e empresas B2B"],
                 ["Visão do cliente", "Escolhe itens e preços que cada empresa vê"],
                 ["Estoque", "Consulta o saldo e registra ajuste"],
@@ -770,6 +1008,24 @@ export default function GavioesStyleFluxos() {
             />
           </CardBody>
         </Card>
+      </Stack>
+
+      <Divider />
+      <Stack gap={16}>
+        <H2>6. Portais do afiliado e do fornecedor</H2>
+        <Text tone="secondary">
+          Dois acessos separados. Nenhum dos dois entra pelo e-commerce nem pelo SSO do backoffice.
+        </Text>
+        <H3>Afiliado</H3>
+        <Text tone="secondary" size="small">
+          Vê os dashboards e o engajamento da própria atuação. Os números saem do espelho.
+        </Text>
+        <FlowChart nodes={AFILIADO_NODES} edges={AFILIADO_EDGES} nodeWidth={420} markerId="seta-afiliado" />
+        <H3>Fornecedor</H3>
+        <Text tone="secondary" size="small">
+          Cadastra produtos na plataforma e acompanha as vendas dele. O produto fica no espelho e segue ao Bling.
+        </Text>
+        <FlowChart nodes={FORNECEDOR_NODES} edges={FORNECEDOR_EDGES} nodeWidth={300} markerId="seta-fornecedor" />
       </Stack>
     </Stack>
   );
