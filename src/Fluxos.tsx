@@ -891,7 +891,7 @@ function QuadroRegistros() {
           rows={[
             ["Produto, SKU e EAN", "Cópia para a loja e o dashboard", "Cadastro oficial"],
             ["Estoque", "Saldo que a tela mostra", "Saldo oficial"],
-            ["Pedido de venda", "Nasce na compra e guarda o histórico", "Bling recebe a venda. OxiTilia recebe a logística."],
+            ["Pedido de venda", "Nasce na compra e guarda o histórico", "Bling recebe a venda. OxDealer recebe a logística."],
             ["Nota e parte fiscal", "Guarda o status que voltou", "Emissão e rotina fiscal"],
             ["Cliente B2C", "Conta criada na hora de pagar", "Recebe o cliente junto com o pedido"],
             ["Cliente B2B, preço e visão", "Quem vê uniforme e qual preço", "Recebe o pedido já com esse preço"],
@@ -912,7 +912,7 @@ export default function GavioesStyleFluxos() {
       <Stack gap={8}>
         <H1>Fluxos da Gaviões Style</H1>
         <Text tone="secondary">
-          Loja para quem compra, backoffice por SSO para o time, e portais próprios para afiliado e fornecedor. O espelho é a cópia nossa dos dados. O Bling segue em produto, estoque oficial, pedido de venda e fiscal. A OxiTilia recebe o pedido para a logística.
+          Loja para quem compra, backoffice por SSO para o time, e portais próprios para afiliado e fornecedor. O espelho é a cópia nossa dos dados. O Bling segue em produto, estoque oficial, pedido de venda e fiscal. A OxDealer recebe o pedido para a logística.
         </Text>
       </Stack>
       <Legenda />
@@ -921,7 +921,7 @@ export default function GavioesStyleFluxos() {
       <Stack gap={12}>
         <H2>1. Visão geral</H2>
         <Text tone="secondary">
-          Quem compra entra pela loja. O time entra no backoffice por SSO. Afiliado e fornecedor entram em portais separados. Todos usam o espelho. O pedido segue ao Bling e à OxiTilia.
+          Quem compra entra pela loja. O time entra no backoffice por SSO. Afiliado e fornecedor entram em portais separados. Todos usam o espelho. O pedido segue ao Bling e à OxDealer.
         </Text>
         <MapaGeral />
         <H3>Acessos separados</H3>
@@ -936,7 +936,7 @@ export default function GavioesStyleFluxos() {
       <Stack gap={12}>
         <H2>2. Compra B2C</H2>
         <Text tone="secondary">
-          Qualquer pessoa vê o catálogo público e monta o carrinho sem conta. O cadastro aparece só na hora de pagar. O pedido nasce no espelho e já segue para o Bling e para a OxiTilia, a logística.
+          Qualquer pessoa vê o catálogo público e monta o carrinho sem conta. O cadastro aparece só na hora de pagar. O pedido nasce no espelho e já segue para o Bling e para a OxDealer, a logística.
         </Text>
         <FlowChart nodes={B2C_NODES} edges={B2C_EDGES} nodeWidth={300} markerId="seta-b2c" />
       </Stack>
@@ -945,7 +945,7 @@ export default function GavioesStyleFluxos() {
       <Stack gap={12}>
         <H2>3. Acesso B2B</H2>
         <Text tone="secondary">
-          Uniforme, item de empresa e preço fechado dependem de cadastro aprovado. O backoffice monta o que cada empresa vê e por qual preço. O catálogo público continua aberto. Quando a compra fecha, o pedido também nasce no espelho e segue para o Bling e para a OxiTilia.
+          Uniforme, item de empresa e preço fechado dependem de cadastro aprovado. O backoffice monta o que cada empresa vê e por qual preço. O catálogo público continua aberto. Quando a compra fecha, o pedido também nasce no espelho e segue para o Bling e para a OxDealer.
         </Text>
         <FlowChart nodes={B2B_NODES} edges={B2B_EDGES} nodeWidth={300} markerId="seta-b2b" />
         <Callout tone="neutral" title="Etapa seguinte">
@@ -969,7 +969,7 @@ export default function GavioesStyleFluxos() {
         <Stack gap={8}>
           <H3>Pedido da loja</H3>
           <Text tone="secondary" size="small">
-            A venda nasce na loja e fica no espelho. O Bling recebe a venda. A OxiTilia recebe a entrega. O status volta ao espelho.
+            A venda nasce na loja e fica no espelho. O Bling recebe a venda. A OxDealer recebe a entrega. O status volta ao espelho.
           </Text>
           <FlowChart nodes={PEDIDO_NODES} edges={PEDIDO_EDGES} nodeWidth={300} markerId="seta-pedido" />
         </Stack>
