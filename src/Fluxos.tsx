@@ -88,7 +88,7 @@ const B2C_NODES: FlowNode[] = [
   },
   {
     id: "oxi",
-    title: "OxiTilia recebe o pedido",
+    title: "OxDealer recebe o pedido",
     detail: "A logística entra no momento em que o pedido nasce no espelho.",
     kind: "bling",
   },
@@ -170,7 +170,7 @@ const B2B_NODES: FlowNode[] = [
   },
   {
     id: "oxi",
-    title: "OxiTilia recebe o pedido",
+    title: "OxDealer recebe o pedido",
     detail: "A mesma logística da compra B2C, no nascimento do pedido.",
     kind: "bling",
   },
@@ -242,7 +242,7 @@ const PEDIDO_NODES: FlowNode[] = [
   },
   {
     id: "oxi",
-    title: "O espelho envia o pedido à OxiTilia",
+    title: "O espelho envia o pedido à OxDealer",
     detail: "A logística recebe a entrega junto com o nascimento do pedido.",
     kind: "bling",
   },
@@ -583,7 +583,7 @@ function MapaGeral() {
       h: 84,
       kind: "nosso",
       title: "Espelho",
-      detail: "Cópia nossa de produto, estoque, pedido e cliente. O pedido nasce aqui e segue ao Bling e à OxiTilia.",
+      detail: "Cópia nossa de produto, estoque, pedido e cliente. O pedido nasce aqui e segue ao Bling e à OxDealer.",
     },
     {
       id: "bling",
@@ -602,7 +602,7 @@ function MapaGeral() {
       w: 268,
       h: 88,
       kind: "bling",
-      title: "OxiTilia",
+      title: "OxDealer",
       detail: "Logística. Recebe o pedido assim que ele nasce no espelho.",
     },
   ];
@@ -624,7 +624,7 @@ function MapaGeral() {
   return (
     <div style={{ overflowX: "auto" }}>
       <svg width={720} height={560} viewBox="0 0 720 560" role="img">
-        <title>Mapa da loja, do backoffice, do espelho, do Bling e da OxiTilia</title>
+        <title>Mapa da loja, do backoffice, do espelho, do Bling e da OxDealer</title>
         <defs>
           {arrowMarker("mapa-seta", color)}
           <marker id="mapa-seta-inicio" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto">
@@ -851,7 +851,7 @@ function Legenda() {
     { label: "Pessoa", kind: "pessoa" as const },
     { label: "Loja, portais e espelho", kind: "nosso" as const },
     { label: "Decisão", kind: "decisao" as const },
-    { label: "Bling e OxiTilia", kind: "bling" as const },
+    { label: "Bling e OxDealer", kind: "bling" as const },
   ];
   return (
     <Row gap={16} align="center" wrap>
